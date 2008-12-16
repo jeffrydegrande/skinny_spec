@@ -166,12 +166,10 @@ module LuckySneaks
     
   private
     def do_render
-      default_template = self.class.description.split.first
-      
       if @the_template
         render @the_template
-      elsif File.exists?(File.join(RAILS_ROOT, "app/views", default_template))
-        render default_template
+      elsif File.exists?(File.join(RAILS_ROOT, "app/views", self.class.description_text))
+        render self.class.description_text
       else
         error_message = "Cannot determine template for render. "
         error_message << "Please define @the_template in the before block "
