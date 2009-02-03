@@ -6,10 +6,12 @@ module LuckySneaks
     include LuckySneaks::CommonSpecHelpers
     include LuckySneaks::ControllerRequestHelpers
     include LuckySneaks::ControllerStubHelpers
+    include LuckySneaks::NestedResourceHelpers
     
     def self.included(base)
       base.extend ExampleGroupMethods
       base.extend ControllerRequestHelpers::ExampleGroupMethods
+      base.extend NestedResourceHelpers::ExampleGroupMethods
     end
     
     # Evaluates the specified block for each of the RESTful controller methods.
@@ -101,7 +103,13 @@ module LuckySneaks
             end
           end
           find_method = options.delete(:method) || :find
-          create_ar_class_expectation name, find_method, argument, options
+          
+          if parent?
+            create_nested_resource_expectations
+          else
+            create_ar_class_expectation name, find_method, argument, options
+          end
+          
           eval_request
         end
       end

@@ -23,17 +23,23 @@ module LuckySneaks # :nodoc:
     def stub_find_all(klass, options = {})
       returning(Array.new(options[:size] || 3){mock_model(klass)}) do |collection|
         stub_out klass, options.delete(:stub)
+
         if format = options.delete(:format)
           stub_formatted collection, format
           params[:format] = format
         end
-        if find_method = options[:find_method]
-          # Not stubbing specific arguments here
-          # If you need more specificity, write a custom example
-          klass.stub!(find_method).and_return(collection)
+        
+        if parent?
+          create_nested_resource_stubs(collection)
         else
-          klass.stub!(:find).with(:all).and_return(collection)
-          klass.stub!(:find).with(:all, hash_including(options)).and_return(collection)
+          if find_method = options[:find_method]
+            # Not stubbing specific arguments here
+            # If you need more specificity, write a custom example
+            klass.stub!(find_method).and_return(collection)
+          else
+            klass.stub!(:find).with(:all).and_return(collection)
+            klass.stub!(:find).with(:all, hash_including(options)).and_return(collection)
+          end
         end
       end
     end
