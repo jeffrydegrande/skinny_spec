@@ -6,6 +6,8 @@ module LuckySneaks
     
   private
     def define_implicit_request(method)
+      parentize_params
+      
       @controller_method = method
       @implicit_request = case method
       when :index, :new, :show, :edit

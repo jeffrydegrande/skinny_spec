@@ -1,51 +1,66 @@
 module LuckySneaks
   module NestedResourceHelpers
-    attr_accessor :child_collection
-    
     def self.included(base)
       base.extend ExampleGroupMethods
     end
     
+    # Overrides what Resourceful::Default::Accessors thinks controller_name is
+    def controller_name
+      @controller.controller_name
+    end
+    
+    def parent_names
+      self.class.read_inheritable_attribute :parents
+    end
+    
+    # TODO: only recognizes the first parent passed to belongs_to
+    def parent_name
+      @parent_name ||= parent_names.first
+    end
+    
     def parent?
-      !!self.class.read_inheritable_attribute(:parent)
+      !!parent_name
     end
     
-    def parent
-      @parent ||= mock(parent_class, :id => 1)
+    def parent_model
+      class_for(parent_name)
     end
     
-    def parent_class
-      class_for(self.class.read_inheritable_attribute(:parent))
+    def instance_variable_name
+      controller_name
     end
     
-    def child_collection_method
-      model_class_name.underscore.pluralize.to_sym
-    end
-    
-    def model_class_name
-      @controller.controller_name.singularize.camelize
-    end
-    
-    def create_nested_resource_stubs(collection)
-      @child_collection = collection
-      
-      association_id = (parent_class.to_s.underscore + "_id").to_sym
-      params[association_id] = parent.id
-      
-      @child_collection.stub!(:find).with(:all).and_return(@child_collection)
-      parent.stub!(child_collection_method).and_return(@child_collection)
-      parent_class.stub!(:find).with(parent.id.to_s).and_return(parent)
+    def mock_parent
+      @mock_parent ||= mock(parent_name, :id => 1)
     end
 
-    def create_nested_resource_expectations
-      unless @child_collection.nil?
-        @child_collection.should_receive(:find).with(:all).and_return(@child_collection)
-      end
+    def parentize_params
+      params["#{parent_name.to_s.underscore}_id"] = mock_parent.id
+    end
+    
+    def create_nested_resource_stubs(options = {})
+      @child_collection = collection = options.delete(:collection)
+      member = options.delete(:member)
+      
+      collection.stub!(:find).with(:all).and_return(collection)
+      collection.stub!(:build).with(any_args).and_return(member)
+      
+      mock_parent.stub!(instance_variable_name).and_return(collection)
+      parent_model.stub!(:find).with(mock_parent.id.to_s).and_return(mock_parent)
+    end
+
+    def create_nested_resource_expectations(name)
+      collection = instance_for(name)
+      collection.should_receive(:find).with(:all).and_return(collection)
+    end
+    
+    def create_nested_resource_instance_expectation(name)
+      @child_collection.should_receive(:build).with(any_args).and_return(instance_for(name))
     end
     
     module ExampleGroupMethods
-      def belongs_to(parent)
-        write_inheritable_attribute(:parent, parent.to_s)
+      def belongs_to(*parents)
+        write_inheritable_attribute(:parents, parents.map(&:to_s))
       end
     end
   end

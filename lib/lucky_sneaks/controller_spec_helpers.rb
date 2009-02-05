@@ -105,7 +105,7 @@ module LuckySneaks
           find_method = options.delete(:method) || :find
           
           if parent?
-            create_nested_resource_expectations
+            create_nested_resource_expectations name
           else
             create_ar_class_expectation name, find_method, argument, options
           end
@@ -141,7 +141,11 @@ module LuckySneaks
       #   it_should_initialize :foo, :bar => "baz"   # => Foo.should_receive(:new).with(:bar => "baz")
       def it_should_initialize(name, options = {})
         it "should initialize a #{name}" do
-          create_ar_class_expectation name, :new, params[options.delete(:params)], options
+          if parent?
+            create_nested_resource_instance_expectation name
+          else
+            create_ar_class_expectation name, :new, params[options.delete(:params)], options
+          end
           eval_request
         end
       end

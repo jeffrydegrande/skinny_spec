@@ -30,7 +30,7 @@ module LuckySneaks # :nodoc:
         end
         
         if parent?
-          create_nested_resource_stubs(collection)
+          create_nested_resource_stubs(:collection => collection)
         else
           if find_method = options[:find_method]
             # Not stubbing specific arguments here
@@ -66,15 +66,20 @@ module LuckySneaks # :nodoc:
           stub_formatted member, format
           params[:format] = format
         end
-        klass.stub!(:new).and_return(member)
-        if options[:params]
-          klass.stub!(:new).with(hash_including(options[:params])).and_return(member)
-        end
-        if options[:stub_save]
-          stub_ar_method member, :save, options[:return]
+        
+        if parent?
+          create_nested_resource_stubs(:member => member, :collection => Array.new)
         else
-          member.stub!(:new_record?).and_return(true)
-          member.stub!(:id).and_return(nil)
+          klass.stub!(:new).and_return(member)
+          if options[:params]
+            klass.stub!(:new).with(hash_including(options[:params])).and_return(member)
+          end
+          if options[:stub_save]
+            stub_ar_method member, :save, options[:return]
+          else
+            member.stub!(:new_record?).and_return(true)
+            member.stub!(:id).and_return(nil)
+          end
         end
       end
     end
