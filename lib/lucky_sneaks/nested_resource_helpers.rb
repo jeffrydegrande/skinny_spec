@@ -42,16 +42,24 @@ module LuckySneaks
       @child_collection = collection = options.delete(:collection)
       member = options.delete(:member)
       
+      unless member.nil?
+        collection.stub!(:find).with(member.id).and_return(member)
+        collection.stub!(:find).with(member.id.to_s).and_return(member)
+        member.stub!(:parent).and_return(mock_parent)
+      end
+      
       collection.stub!(:find).with(:all).and_return(collection)
       collection.stub!(:build).with(any_args).and_return(member)
-      
+
       mock_parent.stub!(instance_variable_name).and_return(collection)
       parent_model.stub!(:find).with(mock_parent.id.to_s).and_return(mock_parent)
     end
 
     def create_nested_resource_expectations(name)
-      collection = instance_for(name)
-      collection.should_receive(:find).with(:all).and_return(collection)
+      if name.to_s.pluralize == name.to_s
+        collection = instance_for(name)
+        collection.should_receive(:find).with(:all).and_return(collection)
+      end
     end
     
     def create_nested_resource_instance_expectation(name)

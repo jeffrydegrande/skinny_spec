@@ -74,12 +74,13 @@ module LuckySneaks # :nodoc:
           if options[:params]
             klass.stub!(:new).with(hash_including(options[:params])).and_return(member)
           end
-          if options[:stub_save]
-            stub_ar_method member, :save, options[:return]
-          else
-            member.stub!(:new_record?).and_return(true)
-            member.stub!(:id).and_return(nil)
-          end
+        end
+
+        if options[:stub_save]
+          stub_ar_method member, :save, options[:return]
+        else
+          member.stub!(:new_record?).and_return(true)
+          member.stub!(:id).and_return(nil)
         end
       end
     end
@@ -131,15 +132,20 @@ module LuckySneaks # :nodoc:
             stub_ar_method member, ar_stub, options.delete(:return), options.delete(:update_params)
           end
         end
-        if find_method = options.delete(:find_method)
-          klass.stub!(find_method).and_return(member)
+        
+        if parent?
+          create_nested_resource_stubs(:member => member, :collection => Array.new)
         else
-          # Stubbing string and non-string just to be safe
-          klass.stub!(:find).with(member.id).and_return(member)
-          klass.stub!(:find).with(member.id.to_s).and_return(member)
-          unless options.empty?
-            klass.stub!(:find).with(member.id, hash_including(options)).and_return(member)
-            klass.stub!(:find).with(member.id.to_s, hash_including(options)).and_return(member)
+          if find_method = options.delete(:find_method)
+            klass.stub!(find_method).and_return(member)
+          else
+            # Stubbing string and non-string just to be safe
+            klass.stub!(:find).with(member.id).and_return(member)
+            klass.stub!(:find).with(member.id.to_s).and_return(member)
+            unless options.empty?
+              klass.stub!(:find).with(member.id, hash_including(options)).and_return(member)
+              klass.stub!(:find).with(member.id.to_s, hash_including(options)).and_return(member)
+            end
           end
         end
       end
