@@ -10,7 +10,7 @@ module LuckySneaks
     end
     
     def parent_names
-      self.class.read_inheritable_attribute :parents
+      self.class.read_inheritable_attribute(:parents) || []
     end
     
     # TODO: only recognizes the first parent passed to belongs_to
@@ -63,7 +63,7 @@ module LuckySneaks
       unless member.nil?
         collection.stub!(:find).with(member.id).and_return(member)
         collection.stub!(:find).with(member.id.to_s).and_return(member)
-        member.stub!(:parent).and_return(mock_parent)
+        member.stub!(parent_name).and_return(mock_parent)
       end
       
       collection.stub!(:find).with(:all).and_return(collection)
@@ -103,7 +103,7 @@ module LuckySneaks
       # Say Cat <tt>has_many :toys</tt> and Toy <tt>belongs_to :cat</tt>. In
       # toys_controller.rb:
       #
-      #   class ToysController < ActionController
+      #   class ToysController < ApplicationController
       #     make_resourceful do
       #       actions :all
       #       belongs_to :cat

@@ -37,8 +37,11 @@ module LuckySneaks # :nodoc:
             # If you need more specificity, write a custom example
             klass.stub!(find_method).and_return(collection)
           else
-            klass.stub!(:find).with(:all).and_return(collection)
-            klass.stub!(:find).with(:all, hash_including(options)).and_return(collection)
+            if options.empty?
+              klass.stub!(:find).with(:all).and_return(collection)
+            else
+              klass.stub!(:find).with(:all, hash_including(options)).and_return(collection)
+            end
           end
         end
       end
