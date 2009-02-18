@@ -18,6 +18,11 @@ module LuckySneaks
     # This is useful to spec that all controller methods redirect when no user is
     # logged in.
     def with_default_restful_actions(params = {}, &block)
+      
+      # this only works if the parent is never expected to find a child,
+      # e.g. when the before_filter causes a redirect
+      params.merge!(parentize_params) if parent?
+      
       {
         :get => :index,
         :get => :new,
@@ -105,7 +110,7 @@ module LuckySneaks
           find_method = options.delete(:method) || :find
           
           if parent?
-            create_nested_resource_expectations name
+            create_nested_resource_collection_expectations name
           else
             create_ar_class_expectation name, find_method, argument, options
           end
