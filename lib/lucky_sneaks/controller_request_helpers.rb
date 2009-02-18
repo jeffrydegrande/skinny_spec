@@ -6,7 +6,7 @@ module LuckySneaks
     
   private
     def define_implicit_request(method)
-      parentize_params
+      parentize_params if parent?
       
       @controller_method = method
       @implicit_request = case method
