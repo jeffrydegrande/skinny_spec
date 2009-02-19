@@ -110,6 +110,15 @@ module LuckySneaks
       #   describe ToysController do
       #     belongs_to :cat
       #
+      #     describe "responding to GET :index" do
+      #       before(:each) do
+      #         @toys = stub_index(Toy)
+      #       end
+      # 
+      #       it_should_find_and_assign :toys
+      #       it_should_render_template :index
+      #     end
+      #
       #     ...
       #   end
       #
@@ -132,7 +141,7 @@ module LuckySneaks
       #     describe "belonging to Gerbil" do
       #       belongs_to :gerbil
       #
-      #       end
+      #       ...
       #     end
       #   end
       def belongs_to(parent)
