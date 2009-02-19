@@ -1,21 +1,12 @@
 module LuckySneaks
-  # Assume Cat <tt>has_many :toys</tt>.
+  # These methods are probably only useful when using <tt>belongs_to</tt>.
   module NestedResourceHelpers
     def self.included(base)
       base.extend ExampleGroupMethods
     end
     
-    def controller_name
-      @controller.controller_name
-    end
-    
-    def parent_names
-      self.class.read_inheritable_attribute(:parents) || []
-    end
-    
-    # TODO: only recognizes the first parent passed to belongs_to
     def parent_name
-      @parent_name ||= parent_names.first
+      @parent_name ||= self.class.read_inheritable_attribute :parent
     end
     
     def parent?
@@ -27,13 +18,15 @@ module LuckySneaks
     end
     
     def instance_variable_name
-      controller_name
+      @controller.controller_name
     end
     
     def mock_parent
       @mock_parent ||= mock(parent_name, :id => 1)
     end
-
+    
+    # Adds the appropriate parent id to the params hash. Should be called before
+    # eval_request.
     def parentize_params
       params["#{parent_name.to_s.underscore}_id"] = mock_parent.id
       params
@@ -75,7 +68,7 @@ module LuckySneaks
     
     # Creates an expectation on the instance variable for <tt>name</tt> that
     # it should receive <tt>find(:all)</tt> <b>only if <tt>name</tt> is
-    # plural</b>. Meant to be used by <tt>ControllerSpecHelpers::it_should_find</tt>.
+    # plural</b>. Meant to be used by <tt>it_should_find</tt>.
     #
     #   # name = :toys
     #   cat.toys.find(:all)   #=> @toys
@@ -96,6 +89,8 @@ module LuckySneaks
       @child_collection.should_receive(:build).with(any_args).and_return(instance_for(name))
     end
     
+    # This module exposes the <tt>belongs_to</tt> method for tidying up controller
+    # specs for nested resources. See the docs on that method.
     module ExampleGroupMethods
       
       # Makes stubbing nested resources easier.
@@ -120,13 +115,28 @@ module LuckySneaks
       #
       # Now you can use the same stub_* and it_should_* methods as always, and
       # the stubbing and expectations needed by the parent model and collection
-      # of child models is taken care of.
+      # of child models are taken care of.
       #
-      # <i>Note:</i> even though this method accepts any number of parents, only
-      # the first one will be used in requests. This is a bug and will be
-      # fixed...sooner or later.
-      def belongs_to(*parents)
-        write_inheritable_attribute(:parents, parents.map(&:to_s))
+      # <em>Note:</em> make_resourceful allows you to specify multiple parents in
+      # a single <tt>belongs_to</tt> declaration. That isn't supported here. If
+      # you need to test that behavior, separate your parents into multiple
+      # describe blocks:
+      #
+      #   describe ToysController do
+      #     describe "belonging to Cat" do
+      #       belongs_to :cat
+      #
+      #       ...
+      #     end
+      #
+      #     describe "belonging to Gerbil" do
+      #       belongs_to :gerbil
+      #
+      #       end
+      #     end
+      #   end
+      def belongs_to(parent)
+        write_inheritable_attribute(:parent, parent.to_s)
       end
     end
   end
