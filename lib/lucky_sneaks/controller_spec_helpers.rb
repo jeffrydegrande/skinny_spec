@@ -14,33 +14,67 @@ module LuckySneaks
       base.extend NestedResourceHelpers::ExampleGroupMethods
     end
     
-    # Evaluates the specified block for each of the RESTful controller methods.
+    # Same as with_restful_actions(:all)
+    def with_default_restful_actions(params = {}, &block)
+      with_restful_actions(:all, params, &block)
+    end
+    
+    # Evaluates the specified block for each of the RESTful controller methods given. If
+    # no actions are explicitly specified, or if the only action is :all, runs all the
+    # default RESTful methods. You can also pass additional parameters as an options hash.
+    #
+    #   with_restful_actions { ... }
+    #     #=> index, show, new, create, edit, update, destroy
+    #
+    #   with_restful_actions(:all) { ... }
+    #     #=> same
+    #
+    #   with_restful_actions(:show, :edit, :update) { ... }
+    #     #=> just show, edit, update
+    #
+    #   with_restful_actions(:param1 => value, :param2 => quality) { ... }
+    #     #=> all actions with additional parameters
+    #     
+    #   with_restful_actions(:edit, :update, :param => thing) { ... }
+    #     #=> just edit and update with extra params
+    #
     # This is useful to spec that all controller methods redirect when no user is
     # logged in.
-    def with_default_restful_actions(params = {}, &block)
+    def with_restful_actions(*args, &block)
+      
+      params = args.extract_options!
       
       # this only works if the parent is never expected to find a child,
       # e.g. when the before_filter causes a redirect
       params.merge!(parentize_params) if parent?
       
-      {
-        :get => :index,
-        :get => :new,
-        :post => :create
-      }.each do |method_id, message|
-        self.send method_id, message, params
-        block.call
+      actions = {
+        :index   => :get,
+        :show    => :get,
+        :new     => :get,
+        :create  => :post,
+        :edit    => :get,
+        :update  => :put,
+        :destroy => :delete
+      }
+      
+      unless args.empty? || args.include?(:all)
+        # Hash.select returns arrays, not a hash
+        actions.reject! { |action, method| !args.include?(action) }
       end
-      {
-        :get => :edit,
-        :put => :update,
-        :delete => :destroy
-      }.each do |method_id, message|
-        if params[:before]
-          params.delete(:before).call
+      
+      actions.each do |action, method|
+        if [:show, :edit, :update, :destroy].include?(action)
+          if params[:before]
+            params.delete(:before).call
+          end
+
+          # Presuming any id will do
+          self.send method, action, params.merge(:id => 1)
+        else
+          self.send method, action, params
         end
-        # Presuming any id will do
-        self.send method_id, message, params.merge(:id => 1)
+        
         block.call
       end
     end
