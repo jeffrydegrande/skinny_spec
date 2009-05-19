@@ -124,6 +124,33 @@ example:
     end
   end
 
+It's also simple to write examples for resourceful controllers that may be nested, make_resourceful-style:
+
+  # config/routes.rb
+  ActionController::Routing::Routes.draw do |map|
+    map.resources :cats, :has_many => :toys
+  end
+  
+  # spec/controllers/toys_controller_spec.rb
+  describe ToysController do
+    belongs_to :cat
+
+    describe "responding to GET :index" do
+      before(:each) do
+        @toys = stub_index(Toy)
+      end
+
+      it_should_find_and_assign :toys
+      it_should_render_template :index
+    end
+
+    # ...
+  end
+
+Now you can use the same stub_* and it_should_* methods as always, and
+the stubbing and expectations needed by the parent model and collection
+of child models are taken care of.
+
 Finally we get to the meat of the spec and of Skinny Specs itself: the actual expectations.
 The first thing you'll notice is the use of example group (read: "describe" block) level methods
 instead of the usual example (read: "it") blocks. Using this helper at the example group level
