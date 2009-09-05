@@ -61,8 +61,10 @@ module LuckySneaks
       
       collection.stub!(:find).with(:all).and_return(collection)
       collection.stub!(:build).with(any_args).and_return(member)
-
+      
       mock_parent.stub!(instance_variable_name).and_return(collection)
+      mock_parent.stub!(:to_s).and_return(mock_parent.id.to_s)
+      
       parent_model.stub!(:find).with(mock_parent.id.to_s).and_return(mock_parent)
     end
     
